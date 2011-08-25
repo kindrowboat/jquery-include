@@ -2,8 +2,10 @@
  * $.include - script inclusion jQuery plugin
  * Based on idea from http://www.gnucitizen.org/projects/jquery-include/
  * @author Tobiasz Cudnik
+ * @author Tom Dunlap tom@mediafuel.net
  * @link http://meta20.net/.include_script_inclusion_jQuery_plugin
  * @license MIT
+ * @license GNU GPL
  */
 // overload jquery's onDomReady
 if ( jQuery.browser.mozilla || jQuery.browser.opera ) {
@@ -14,6 +16,7 @@ jQuery.event.remove( window, "load", jQuery.ready );
 jQuery.event.add( window, "load", function(){ jQuery.ready(); } );
 jQuery.extend({
 	includeStates: {},
+	includedScriptFiles: new Array(),
 	include: function(url, callback, dependency){
 		if ( typeof callback != 'function' && ! dependency ) {
 			dependency = callback;
@@ -21,6 +24,7 @@ jQuery.extend({
 		}
 		url = url.replace('\n', '');
 		jQuery.includeStates[url] = false;
+		jQuery.includedScriptFiles.push(jQuery.parseFileName(url));
 		var script = document.createElement('script');
 		script.type = 'text/javascript';
 		script.onload = function () {
@@ -59,24 +63,30 @@ jQuery.extend({
 		}
 	},
         includeOnce: function(url, callback, dependency){
-            if(jQuery.included(url)){
+            if(jQuery.scriptIncluded(url)){
                 return true;
             }
             else{
                 jQuery.include(url, callback, dependency);
             }
         },
-        included: function(urlInQuestion){
+        scriptIncluded: function(urlInQuestion){
             var found = false;
-            jQuery.each(jQuery.includeStates, function(alreadyIncludedUrl, status){
-                if(urlInQuestion.toLowerCase() == alreadyIncludedUrl.toLowerCase()){
-                    found = true;
-                    return false; //stop the each loop
+	    var fileInQuestion = jQuery.parseFileName(urlInQuestion).toLowerCase();
+            for(x in jQuery.includedScriptFiles){
+                if(fileInQuestion == jQuery.includedScriptFiles[x].toLowerCase()){
+                    return true;
 		}
-            });
-	    console.log(urlInQuestion + ' already included: ' + found);
-            return found;
+            }
+	    return false;
         },
+	parseFileName: function(url){
+		var lastSlash = url.lastIndexOf('/');
+		if(lastSlash > -1)
+			return url.substr(lastSlash+1);
+		else
+			return url;
+	},
 	readyOld: jQuery.ready,
 	ready: function () {
 		if (jQuery.isReady) return;
